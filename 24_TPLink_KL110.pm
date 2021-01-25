@@ -1,5 +1,5 @@
 ################################################################
-# $Id: 24_TPLinkHS110.pm 21645 2020-04-12 09:11:23Z vk $
+# $Id: 24_TPLinkKL110.pm 21645 2020-04-12 09:11:23Z vk $
 #
 #  Release 2020-04-12
 #
@@ -9,12 +9,12 @@
 #  e-mail: volker at kettenbach minus it dot de
 #
 #  Description:
-#  This is an FHEM-Module for the TP Link TPLinkHS110110/110 
+#  This is an FHEM-Module for the TP Link TPLinkKL110 
 #  wifi controlled power outlet.
 #  It support switching on and of the outlet as well as switching
 #  on and of the nightmode (green led off).
 #  It supports reading several readings as well as the
-#  realtime power readings of the HS110.
+#  realtime power readings of the KL110.
 #
 #  Requirements
 #  	Perl Module: IO::Socket::INET
@@ -41,15 +41,15 @@ use Data::Dumper;
 
 
 #####################################
-sub TPLinkHS110_Initialize($) {
+sub TPLinkKL110_Initialize($) {
 	my ($hash) = @_;
 
-	$hash->{DefFn} = "TPLinkHS110_Define";
-	$hash->{ReadFn} = "TPLinkHS110_Get";
-	$hash->{SetFn} = "TPLinkHS110_Set";
-	$hash->{UndefFn} = "TPLinkHS110_Undefine";
-	$hash->{DeleteFn} = "TPLinkHS110_Delete";
-	$hash->{AttrFn} = "TPLinkHS110_Attr";
+	$hash->{DefFn} = "TPLinkKL110_Define";
+	$hash->{ReadFn} = "TPLinkKL110_Get";
+	$hash->{SetFn} = "TPLinkKL110_Set";
+	$hash->{UndefFn} = "TPLinkKL110_Undefine";
+	$hash->{DeleteFn} = "TPLinkKL110_Delete";
+	$hash->{AttrFn} = "TPLinkKL110_Attr";
 	$hash->{AttrList} = "interval " .
 		"disable:0,1 " .
 		"nightmode:on,off " .
@@ -58,28 +58,28 @@ sub TPLinkHS110_Initialize($) {
 }
 
 #####################################
-sub TPLinkHS110_Define($$) {
+sub TPLinkKL110_Define($$) {
 	my ($hash, $def) = @_;
 	my $name = $hash->{NAME};
 
 	my @a = split("[ \t][ \t]*", $def);
-	return "Wrong syntax: use define <name> TPLinkHS110 <hostname/ip> " if (int(@a) != 3);
+	return "Wrong syntax: use define <name> TPLinkKL110 <hostname/ip> " if (int(@a) != 3);
 
 	$hash->{INTERVAL} = 300;
 	$hash->{TIMEOUT} = 1;
 	$hash->{HOST} = $a[2];
 	$attr{$name}{"disable"} = 0;
 	# initial request after 2 secs, there timer is set to interval for further update
-	InternalTimer(gettimeofday() + 2, "TPLinkHS110_Get", $hash, 0);
+	InternalTimer(gettimeofday() + 2, "TPLinkKL110_Get", $hash, 0);
 
-	Log3 $hash, 3, "TPLinkHS110: $name defined.";
+	Log3 $hash, 3, "TPLinkKL110: $name defined.";
 
 	return undef;
 }
 
 #####################################
 # sends given command and returns ($errmsg/undef,undef/$decrypteddata)
-sub TPLinkHS110_SendCommand($$) {
+sub TPLinkKL110_SendCommand($$) {
 	my ($hash, $command) = @_;
 	my $name = $hash->{NAME};
 
@@ -116,7 +116,7 @@ sub TPLinkHS110_SendCommand($$) {
 			$datalen += ord(substr($dlen, $i, 1));
 		}
 
-		Log3 $hash, 4, "TPLinkHS110: $name Get length - " . $datalen; # JV
+		Log3 $hash, 4, "TPLinkKL110: $name Get length - " . $datalen; # JV
 
 
 		my $datapart;
@@ -141,7 +141,7 @@ sub TPLinkHS110_SendCommand($$) {
 			}
 		}
 
-		Log3 $hash, 4, "TPLinkHS110: $name Get read data length - " . length($data); # JV
+		Log3 $hash, 4, "TPLinkKL110: $name Get read data length - " . length($data); # JV
 	}
 
 	$socket->close();
@@ -159,13 +159,13 @@ sub TPLinkHS110_SendCommand($$) {
   
   
 #####################################
-sub TPLinkHS110_Get($$) {
+sub TPLinkKL110_Get($$) {
 	my ($hash) = @_;
 	my $name = $hash->{NAME};
 	my ($success, $json, $realtimejson);
 	return "Device disabled in config" if ($attr{$name}{"disable"} eq "1");
 	RemoveInternalTimer($hash);
-	InternalTimer(gettimeofday() + $hash->{INTERVAL}, "TPLinkHS110_Get", $hash, 1);
+	InternalTimer(gettimeofday() + $hash->{INTERVAL}, "TPLinkKL110_Get", $hash, 1);
 	$hash->{NEXTUPDATE} = localtime(gettimeofday() + $hash->{INTERVAL});
 
 	my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
@@ -176,22 +176,22 @@ sub TPLinkHS110_Get($$) {
 	my $data;
 
 	my $command = '{"system":{"get_sysinfo":{}},"time":{"get_time":{}}}';
-	($errmsg, $data) = TPLinkHS110_SendCommand($hash, $command);
+	($errmsg, $data) = TPLinkKL110_SendCommand($hash, $command);
 	if (defined($errmsg)) {
-		Log3 $hash, 1, "TPLinkHS110: $name Get failed - " . $errmsg; # JV
+		Log3 $hash, 1, "TPLinkKL110: $name Get failed - " . $errmsg; # JV
 		return;
 	}
 
 	readingsBeginUpdate($hash);
 
-	($success, $json) = TPLinkHS110__evaljson($name, $data);
+	($success, $json) = TPLinkKL110__evaljson($name, $data);
 	if (!$success) {
-		Log3 $hash, 1, "TPLinkHS110: $name Get failed"; # JV
+		Log3 $hash, 1, "TPLinkKL110: $name Get failed"; # JV
 		readingsEndUpdate($hash, 1);
 		return;
 	}
 
-	Log3 $hash, 3, "TPLinkHS110: $name Get called. Relay state: $json->{'system'}->{'get_sysinfo'}->{'relay_state'}, RSSI: $json->{'system'}->{'get_sysinfo'}->{'rssi'}";
+	Log3 $hash, 3, "TPLinkKL110: $name Get called. Relay state: $json->{'system'}->{'get_sysinfo'}->{'relay_state'}, RSSI: $json->{'system'}->{'get_sysinfo'}->{'rssi'}";
 
 	my $hw_ver = $json->{'system'}->{'get_sysinfo'}->{'hw_ver'};
 	my %hwMap = hwMapping();
@@ -236,117 +236,20 @@ sub TPLinkHS110_Get($$) {
 
 	readingsBulkUpdate($hash, "time", $remotetime);
 
-	# If the device is a HS110, get realtime data:
-	#  if ( 1 == 0 ) {
-	if ($json->{'system'}->{'get_sysinfo'}->{'model'} eq "HS110(EU)" or $json->{'system'}->{'get_sysinfo'}->{'model'} eq "HS110(UK)") {
-		my $realtimejcommand = '{"emeter":{"get_realtime":{}}}';
-		my $rdata;
-		($errmsg, $rdata) = TPLinkHS110_SendCommand($hash, $realtimejcommand);
-		if (defined($errmsg)) {
-			Log3 $hash, 1, "TPLinkHS110: $name Get realtime data failed - " . $errmsg; # JV
-			readingsEndUpdate($hash, 1);
-			return;
-		}
-
-		if (length($rdata) == 0) {
-			Log3 $hash, 1, "TPLinkHS110: $name: Received zero bytes of realtime data. Cannot process realtime data";
-			readingsEndUpdate($hash, 1);
-			return;
-		}
-
-		($success, $realtimejson) = TPLinkHS110__evaljson($name, $rdata);
-		if (!$success) {
-			Log3 $hash, 1, "TPLinkHS110: $name: Received zero bytes of realtime data. Cannot process realtime data";
-			readingsEndUpdate($hash, 1);
-			return;
-		}
-		else {
-			Log3 $hash, 3, "TPLinkHS110: $name Realtime data updated";
-		}
-
-		my %emeterReadings = ();
-
-		foreach my $key2 (sort keys %{$realtimejson->{'emeter'}->{'get_realtime'}}) {
-
-			my $emeterValue = $realtimejson->{'emeter'}->{'get_realtime'}->{$key2};
-
-			#adjust different hw_ver readings, be sure to list all emeter readings in hwMapping
-			if (exists($hwMap{$hw_ver}{'emeter'}{'get_realtime'}{$key2})) {
-				if (exists($hwMap{$hw_ver}{'emeter'}{'get_realtime'}{$key2}{'factor'})) {
-					$emeterValue = $emeterValue * $hwMap{$hw_ver}{'emeter'}{'get_realtime'}{$key2}{'factor'};
-				}
-				$key2 = $hwMap{$hw_ver}{'emeter'}{'get_realtime'}{$key2}{'name'};
-				readingsBulkUpdate($hash, $key2, $emeterValue);
-				$emeterReadings{$key2} = $emeterValue;
-			}
-			else {
-				return "Check supported hw_ver of device: $hw_ver\n";
-			}
-		}
-
-		Log3 $hash, 3, "TPLinkHS110: $name Device is an HS110. Got extra realtime data: $emeterReadings{'power'} Watt, $emeterReadings{'voltage'} Volt, $emeterReadings{'current'} Ampere";
-
-		# Get Daily Stats
-		$command = '{"emeter":{"get_daystat":{"month":' . $mon . ',"year":' . $year . '}}}';
-		($errmsg, $data) = TPLinkHS110_SendCommand($hash, $command);
-		if (defined($errmsg)) {
-			Log3 $hash, 1, "TPLinkHS110: $name Get daily stats failed - " . $errmsg; # JV
-			readingsEndUpdate($hash, 1);
-			return;
-		}
-
-		Log3 $hash, 3, "TPLinkHS110: $name Updating daystat. Data: " . $data;
-
-		($success, $json) = TPLinkHS110__evaljson($name, $data);
-		if ($success && $json) {
-
-			my $total = 0;
-			foreach my $key (sort keys @{$json->{'emeter'}->{'get_daystat'}->{'day_list'}}) {
-				foreach my $key2 ($json->{'emeter'}->{'get_daystat'}->{'day_list'}[$key]) {
-					if ($hw_ver eq "1.0") {
-						$total = $total + $key2->{'energy'};
-						if ($key2->{'day'} == $mday) {
-							readingsBulkUpdate($hash, "daily_total", sprintf("%.3f", $key2->{'energy'}));
-						}
-					}
-					else {
-						$total = $total + $key2->{'energy_wh'};
-						if ($key2->{'day'} == $mday) {
-							readingsBulkUpdate($hash, "daily_total", sprintf("%.3f", $key2->{'energy_wh'} * 0.001));
-						}
-					}
-
-				}
-			}
-			my $count = 1;
-			$count = @{$json->{'emeter'}->{'get_daystat'}->{'day_list'}};
-			if ($hw_ver eq "1.0") {readingsBulkUpdate($hash, "monthly_total", $total);}
-			if ($hw_ver eq "2.0") {readingsBulkUpdate($hash, "monthly_total", $total * 0.001);}
-			if ($count) {readingsBulkUpdate($hash, "daily_average", $total / $count)};
-			Log3 $hash, 3, "TPLinkHS110: $name Daystat updated";
-		}
-		else {
-			Log3 $hash, 1, "TPLinkHS110: $name Error updating daystat. Success: " . $success . ", json: " . $json;
-			Log3 $hash, 3, "TPLinkHS110: $name Updating readings";
-			readingsEndUpdate($hash, 1);
-			Log3 $hash, 3, "TPLinkHS110: $name Get end";
-			return;
-		}
-	}
-	Log3 $hash, 3, "TPLinkHS110: $name Updating readings";
+	Log3 $hash, 3, "TPLinkKL110: $name Updating readings";
 	readingsEndUpdate($hash, 1);
-	Log3 $hash, 3, "TPLinkHS110: $name Get end";
+	Log3 $hash, 3, "TPLinkKL110: $name Get end";
 }
 
 
 #####################################
-sub TPLinkHS110_Set($$) {
+sub TPLinkKL110_Set($$) {
 	my ($hash, $name, $cmd, @args) = @_;
 	my $cmdList = "on off";
 	my ($success, $json, $realtimejson);
 	return "\"set $name\" needs at least one argument" unless (defined($cmd));
 	return if ($attr{$name}{"disable"} eq "1");
-	Log3 $hash, 3, "TPLinkHS110: $name Set <" . $cmd . "> called" if ($cmd !~ /\?/);
+	Log3 $hash, 3, "TPLinkKL110: $name Set <" . $cmd . "> called" if ($cmd !~ /\?/);
 
 	my $command = "";
 	if ($cmd eq "on") {
@@ -363,28 +266,28 @@ sub TPLinkHS110_Set($$) {
 	my $errmsg;
 	my $data;
 
-	($errmsg, $data) = TPLinkHS110_SendCommand($hash, $command);
+	($errmsg, $data) = TPLinkKL110_SendCommand($hash, $command);
 	if (defined($errmsg)) {
-		Log3 $hash, 1, "TPLinkHS110: $name Set failed - " . $errmsg;
+		Log3 $hash, 1, "TPLinkKL110: $name Set failed - " . $errmsg;
 		return;
 	}
 
 	readingsBeginUpdate($hash);
 
-	($success, $json) = TPLinkHS110__evaljson($name, $data);
+	($success, $json) = TPLinkKL110__evaljson($name, $data);
 	if (!$success) {
-		Log3 $hash, 1, "TPLinkHS110: $name Set failed - parsing";
+		Log3 $hash, 1, "TPLinkKL110: $name Set failed - parsing";
 		readingsEndUpdate($hash, 1);
 		return;
 	}
 
 	if ($json->{'system'}->{'set_relay_state'}->{'err_code'} eq "0") {
-		Log3 $hash, 3, "TPLinkHS110: $name Set OK - get status data";
-		TPLinkHS110_Get($hash, "");
+		Log3 $hash, 3, "TPLinkKL110: $name Set OK - get status data";
+		TPLinkKL110_Get($hash, "");
 
 	}
 	else {
-		Log3 $hash, 1, "TPLinkHS110: $name Set failed with error code";
+		Log3 $hash, 1, "TPLinkKL110: $name Set failed with error code";
 		return "Command failed!";
 	}
 	return undef;
@@ -392,26 +295,26 @@ sub TPLinkHS110_Set($$) {
 
 
 #####################################
-sub TPLinkHS110_Undefine($$) {
+sub TPLinkKL110_Undefine($$) {
 	my ($hash, $arg) = @_;
 	my $name = $hash->{NAME};
 	RemoveInternalTimer($hash);
-	Log3 $hash, 3, "TPLinkHS110: $name undefined.";
+	Log3 $hash, 3, "TPLinkKL110: $name undefined.";
 	return;
 }
 
 
 #####################################
-sub TPLinkHS110_Delete {
+sub TPLinkKL110_Delete {
 	my ($hash, $arg) = @_;
 	my $name = $hash->{NAME};
-	Log3 $hash, 3, "TPLinkHS110: $name deleted.";
+	Log3 $hash, 3, "TPLinkKL110: $name deleted.";
 	return undef;
 }
 
 
 #####################################
-sub TPLinkHS110_Attr {
+sub TPLinkKL110_Attr {
 	my ($cmd, $name, $aName, $aVal) = @_;
 	my $hash = $defs{$name};
 
@@ -422,7 +325,7 @@ sub TPLinkHS110_Attr {
 		else {
 			$hash->{INTERVAL} = 300;
 		}
-		Log3 $hash, 3, "TPLinkHS110: $name INTERVAL set to " . $hash->{INTERVAL};
+		Log3 $hash, 3, "TPLinkKL110: $name INTERVAL set to " . $hash->{INTERVAL};
 	}
 
 	if ($aName eq "timeout") {
@@ -432,19 +335,19 @@ sub TPLinkHS110_Attr {
 		else {
 			$hash->{TIMEOUT} = 1;
 		}
-		Log3 $hash, 3, "TPLinkHS110: $name TIMEOUT set to " . $hash->{TIMEOUT};
+		Log3 $hash, 3, "TPLinkKL110: $name TIMEOUT set to " . $hash->{TIMEOUT};
 	}
 
 	if ($aName eq "nightmode") {
 		my $command;
 		if ($cmd eq "set") {
 			$hash->{NIGHTMODE} = $aVal;
-			Log3 $hash, 3, "TPLinkHS110: $name Nightmode $aVal.";
+			Log3 $hash, 3, "TPLinkKL110: $name Nightmode $aVal.";
 			$command = '{"system":{"set_led_off":{"off":1}}}' if ($aVal eq "on");
 			$command = '{"system":{"set_led_off":{"off":0}}}' if ($aVal eq "off");
 		}
 		if ($cmd eq "del") {
-			Log3 $hash, 3, "TPLinkHS110: $name Nightmode attribute removed. Nightmode disabled.";
+			Log3 $hash, 3, "TPLinkKL110: $name Nightmode attribute removed. Nightmode disabled.";
 			$command = '{"system":{"set_led_off":{"off":0}}}';
 			$hash->{NIGHTMODE} = "off";
 		}
@@ -468,7 +371,7 @@ sub TPLinkHS110_Attr {
 		eval {
 			$json = decode_json($data);
 		} or do {
-			Log3 $hash, 2, "TPLinkHS110: $name json-decoding failed. Problem decoding getting statistical data";
+			Log3 $hash, 2, "TPLinkKL110: $name json-decoding failed. Problem decoding getting statistical data";
 			return;
 		};
 	}
@@ -588,25 +491,16 @@ sub TPLinkHS110__evaljson($$) {
 =pod
 =begin html
 
-<a name="TPLinkHS110"></a>
-<h3>TPLinkHS110</h3>
+<a name="TPLinkKL110"></a>
+<h3>TPLinkKL110</h3>
 <ul>
   <br>
 
-  <a name="TPLinkHS110"></a>
+  <a name="TPLinkKL110"></a>
   <b>Define</b>
-    <code>define &lt;name&gt; TPLinkHS110 &lt;ip/hostname&gt;</code><br>
+    <code>define &lt;name&gt; TPLinkKL110 &lt;ip/hostname&gt;</code><br>
     	<br>
-	Defines a TP-Link HS100 or HS110 wifi-controlled switchable power outlet.<br>
-	The difference between HS100 and HS110 is, that the HS110 provides realtime measurments of<br>
-	power, current and voltage.<br>
-	This module automatically detects the modul defined and adapts the readings accordingly.<br>
-	<br><br>
-	This module does not implement all functions of the HS100/110.<br>
-	Currently, all parameters relevant for running the outlet under FHEM are processed.<br>
-	Writeable are only "On", "Off" and the nightmode (On/Off) (Nightmode: the LEDs of the outlet are switched off).<br>	
-	Further programming of the outlet should be done by TPLinks app "Kasa", which funtionality is partly redundant<br>
-	with FHEMs core functions.
+	Defines a TP-Link KL110 wifi-controlled light bulb.<br>
   <p>
   <b>Attributs</b>
 	<ul>
@@ -636,25 +530,16 @@ sub TPLinkHS110__evaljson($$) {
 
 =begin html_DE
 
-<a name="TPLinkHS110"></a>
-<h3>TPLinkHS110</h3>
+<a name="TPLinkKL110"></a>
+<h3>TPLinkKL110</h3>
 <ul>
   <br>
 
-  <a name="TPLinkHS110"></a>
+  <a name="TPLinkKL110"></a>
   <b>Define</b>
-    <code>define &lt;name&gt; TPLinkHS110 &lt;ip/hostname&gt;</code><br>
+    <code>define &lt;name&gt; TPLinkKL110 &lt;ip/hostname&gt;</code><br>
     	<br>
-    	Definiert eine TP-Link HS100 oder HS110 schaltbare WLAN-Steckdose. <br>
-	Der Unterschied zwischen der HS100 und HS110 besteht darin, dass die HS110 eine Echtzeit-Messung von <br>
-	Strom, Spannung sowie Leistung durchführt.<br>
-	Dieses Modul erkennt automatisch, welchen Typ Sie verwenden und passt die Readings entsprechend an. 
-	<br><br>
-	Das Modul implementiert nicht alle Funktionen der HS100/110.<br>
-	Derzeit werden alle für den sinnvollen Betrieb an FHEM benötigten Parameter ausgelesen.<br>
-	Geschrieben werden jedoch nur die Schaltzustände  "An", "Aus" sowie der Nachtmodus An/Aus (Nachtmodus = LEDs der Steckdose ausschalten).<br>
-	Für eine weitergehende Programmierung der Steckdosen wird daher die TP Link App "Kasa" empfohlen, wobei deren<br>
-	Funktionen wie Timer etc. letztlich redundant zu Kernfunktionen von FHEM sind.
+    	Definiert eine TP-Link KL110 fernsteuerbare Glühbirne. <br>
   <p>
   <b>Attribute</b>
 	<ul>
@@ -682,6 +567,6 @@ sub TPLinkHS110__evaljson($$) {
 </ul>
 =end html_DE
 
-=item summary Support for TPLink HS100/100 wifi controlled power outlet
+=item summary Support for TPLink KL110 wifi controlled light bulb.
 
-=item summary_DE Support für die TPLink HS100/110 WLAN Steckdosen
+=item summary_DE Support für die TPLink KL110 WLAN Glühbirnen.
