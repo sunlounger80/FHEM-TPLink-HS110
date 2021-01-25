@@ -253,10 +253,10 @@ sub TPLinkKL110_Set($$) {
 
 	my $command = "";
 	if ($cmd eq "on") {
-		$command = '{"system":{"set_relay_state":{"state":1}}}';
+		$command = '{"system":{"on_off":{"state":1}}}';
 	}
 	elsif ($cmd eq "off") {
-		$command = '{"system":{"set_relay_state":{"state":0}}}';
+		$command = '{"system":{"on_off":{"state":0}}}';
 	}
 	else # wenn der übergebene Befehl nicht durch X_Set() verarbeitet werden kann, Weitergabe an SetExtensions
 	{
