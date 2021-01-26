@@ -281,7 +281,7 @@ sub TPLinkKL110_Set($$) {
 		return;
 	}
 
-	if ($json->{'system'}->{'set_relay_state'}->{'err_code'} eq "0") {
+	if ($json->{'system'}->{'on_off'}->{'err_code'} eq "0") {
 		Log3 $hash, 3, "TPLinkKL110: $name Set OK - get status data";
 		TPLinkKL110_Get($hash, "");
 
