@@ -253,10 +253,10 @@ sub TPLinkKL110_Set($$) {
 
 	my $command = "";
 	if ($cmd eq "on") {
-		$command = '{"transition_light_state":{"on_off":1,'transition_period':0}}}';
+		$command = '{"transition_light_state":{"on_off":1,"transition_period":0}}}';
 	}
 	elsif ($cmd eq "off") {
-		$command = '{"transition_light_state":{"on_off":0,'transition_period':0}}}';
+		$command = '{"transition_light_state":{"on_off":0,"transition_period":0}}}';
 	}
 	else # wenn der übergebene Befehl nicht durch X_Set() verarbeitet werden kann, Weitergabe an SetExtensions
 	{
