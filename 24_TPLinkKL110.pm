@@ -253,10 +253,10 @@ sub TPLinkKL110_Set($$) {
 
 	my $command = "";
 	if ($cmd eq "on") {
-		$command = '{"system":{"on_off":{"state":1}}}';
+		$command = '{"transition_light_state":{"on_off":1}}}';
 	}
 	elsif ($cmd eq "off") {
-		$command = '{"system":{"on_off":{"state":0}}}';
+		$command = '{"transition_light_state":{"on_off":0}}}';
 	}
 	else # wenn der übergebene Befehl nicht durch X_Set() verarbeitet werden kann, Weitergabe an SetExtensions
 	{
@@ -281,15 +281,6 @@ sub TPLinkKL110_Set($$) {
 		return;
 	}
 
-	if ($json->{'system'}->{'on_off'}->{'err_code'} eq "0") {
-		Log3 $hash, 3, "TPLinkKL110: $name Set OK - get status data";
-		TPLinkKL110_Get($hash, "");
-
-	}
-	else {
-		Log3 $hash, 1, "TPLinkKL110: $name Set failed with error code";
-		return "Command failed!";
-	}
 	return undef;
 }
 
