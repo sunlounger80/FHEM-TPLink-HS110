@@ -455,7 +455,7 @@ sub hwMapping {
 
 ###############################################################################
 #   Test ob JSON-String empfangen wurde
-sub TPLinkHS110__evaljson($$) {
+sub TPLinkKL110__evaljson($$) {
 	my ($name, $data) = @_;
 	my $hash = $defs{$name};
 	my $json;
